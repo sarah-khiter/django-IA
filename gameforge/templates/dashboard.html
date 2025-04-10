@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block title %}Mon Dashboard{% endblock %}
+
+{% block content %}
+<h1>Bienvenue sur GameForge, {{ user.username }} !</h1>
+
+<p>Prêt à créer ton prochain jeu vidéo ?</p>
+
+<a href="{% url 'create_project' %}" class="btn">+ Créer un nouveau projet</a>
+
+<h2>Mes Projets</h2>
+
+<ul>
+    {% for project in user.gameproject_set.all %}
+        <li>
+            <a href="{% url 'project_detail' project.pk %}">{{ project.title }}</a> 
+            - {{ project.genre }} - {{ project.ambiance }}
+        </li>
+    {% empty %}
+        <li>Aucun projet pour le moment.</li>
+    {% endfor %}
+</ul>
+{% endblock %}
