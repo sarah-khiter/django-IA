@@ -11,6 +11,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis .env
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,10 +25,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-&w9i%k9r(#p8h#ym!ro36q=qs$bj0!nzpto89@i@t&617-!4xi'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = []
 
@@ -39,8 +44,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'gameforge.core', 
     'gameforge.projects',  
-
-    
 ]
 
 MIDDLEWARE = [
@@ -78,8 +81,12 @@ WSGI_APPLICATION = 'gameforge.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'gameforge',
+        'USER': 'postgres',
+        'PASSWORD': 'tygomUv6',  # Laissez vide pour l'authentification peer
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
@@ -125,3 +132,12 @@ STATICFILES_DIRS = [BASE_DIR / 'gameforge' / 'static']
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# API Keys - Using environment variables
+HUGGINGFACE_API_KEY = os.getenv('HUGGINGFACE_API_KEY')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+
+# URL de redirection après la connexion
+LOGIN_REDIRECT_URL = 'core:game_concept_list'
+LOGIN_URL = 'login'
+LOGOUT_REDIRECT_URL = 'core:game_concept_list'
