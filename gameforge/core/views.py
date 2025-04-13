@@ -12,11 +12,21 @@ logger = logging.getLogger(__name__)
 
 @login_required
 def game_concept_list(request):
+    """
+    Affiche la liste des concepts de jeu de l'utilisateur connecté.
+    """
     concepts = GameConcept.objects.filter(user=request.user)
     return render(request, 'core/game_concept_list.html', {'concepts': concepts})
 
 @login_required
 def game_concept_detail(request, pk):
+    """
+    Affiche les détails d'un concept de jeu spécifique.
+    
+    Args:
+        request: La requête HTTP
+        pk: L'identifiant du concept à afficher
+    """
     try:
         concept = get_object_or_404(GameConcept, pk=pk)
         # Vérifier que l'utilisateur a accès à ce concept
@@ -41,6 +51,9 @@ def game_concept_detail(request, pk):
 
 @login_required
 def create_game_concept(request):
+    """
+    Crée un nouveau concept de jeu avec génération automatique de contenu.
+    """
     if request.method == 'POST':
         title = request.POST.get('title')
         genre = request.POST.get('genre')
@@ -79,10 +92,18 @@ def create_game_concept(request):
             )
             
             # Génération de l'image conceptuelle
+            logger.info("Début de la génération de l'image conceptuelle")
             image_prompt = f"{title}, {genre}, {ambiance}, {', '.join(keywords)}"
+            logger.info(f"Prompt pour l'image: {image_prompt}")
+            
             image_data = generate_image(image_prompt)
             if image_data:
+                logger.info("Image générée avec succès, sauvegarde en cours...")
                 concept.image.save(f"{concept.id}.png", image_data, save=True)
+                logger.info("Image sauvegardée avec succès")
+            else:
+                logger.error("Échec de la génération de l'image")
+                messages.warning(request, "L'image conceptuelle n'a pas pu être générée")
             
             messages.success(request, 'Concept de jeu créé avec succès !')
             return redirect('core:game_concept_detail', pk=concept.id)
@@ -95,6 +116,9 @@ def create_game_concept(request):
     return render(request, 'core/create_game_concept.html')
 
 def signup(request):
+    """
+    Gère l'inscription des nouveaux utilisateurs.
+    """
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
@@ -110,7 +134,9 @@ def signup(request):
 
 @login_required
 def logout_view(request):
-    """Vue pour la déconnexion de l'utilisateur"""
+    """
+    Gère la déconnexion des utilisateurs.
+    """
     logout(request)
     messages.success(request, "Vous avez été déconnecté avec succès.")
     return redirect('core:game_concept_list')

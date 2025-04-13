@@ -8,6 +8,12 @@
         <div class="col-md-8">
             <h1 class="mb-4">{{ concept.title }}</h1>
             
+            {% if concept.image %}
+            <div class="card mb-4">
+                <img src="{{ concept.image.url }}" class="card-img-top" alt="Image conceptuelle de {{ concept.title }}">
+            </div>
+            {% endif %}
+            
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
                     <h2 class="h5 mb-0">Univers du Jeu</h2>
