@@ -31,15 +31,27 @@ HEADERS = {
 logger.info("Configuration de l'API Hugging Face terminée")
 
 # Configuration de l'API Hugging Face
-API_URL = "https://api-inference.huggingface.co/models"
+# Utilisation du modèle Mistral pour la génération de texte
+TEXT_API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+IMAGE_API_URL = "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4"
+
+# Configuration des paramètres de génération pour Mistral
+GPT_PARAMS = {
+    "max_length": 500,  # Longueur maximale du texte généré
+    "do_sample": True,  # Active la génération créative
+    "temperature": 0.7,  # Contrôle le niveau de créativité
+    "top_k": 50,  # Nombre de tokens à considérer
+    "top_p": 0.95,  # Probabilité cumulative
+    "repetition_penalty": 1.2  # Évite la répétition
+}
 
 # Modèles
-TEXT_MODEL = "gpt2"  # Modèle plus léger et plus fiable
+TEXT_MODEL = "mistralai/Mistral-7B-Instruct-v0.2"  # Modèle Mistral
 IMAGE_MODEL = "CompVis/stable-diffusion-v1-4"
 
 def generate_content(prompt, max_length=500):
     """
-    Génère du contenu texte à partir d'un prompt en utilisant l'API Hugging Face.
+    Génère du contenu texte à partir d'un prompt en utilisant GPT-2.
     
     Args:
         prompt (str): Le texte d'entrée pour la génération
@@ -51,20 +63,12 @@ def generate_content(prompt, max_length=500):
     try:
         # Préparation des paramètres pour la requête API
         payload = {
-            "inputs": prompt,  # Le prompt fourni
-            "parameters": {
-                "max_length": max_length,  # Longueur maximale du texte généré
-                "do_sample": True,  # Active la génération créative
-                "temperature": 0.7  # Contrôle le niveau de créativité (0.0 à 1.0)
-            }
+            "inputs": prompt,
+            "parameters": GPT_PARAMS
         }
         
         # Envoi de la requête POST à l'API
-        response = requests.post(
-            f"{API_URL}/{TEXT_MODEL}",
-            headers=HEADERS,
-            json=payload
-        )
+        response = requests.post(TEXT_API_URL, headers=HEADERS, json=payload)
         
         # Vérification que la requête a réussi
         response.raise_for_status()
@@ -74,7 +78,7 @@ def generate_content(prompt, max_length=500):
         
     except Exception as e:
         # Journalisation de l'erreur en cas d'échec
-        logger.error(f"Erreur lors de la génération de texte: {str(e)}")
+        logger.error(f"Erreur lors de la génération de texte avec GPT: {str(e)}")
         return None
 
 def generate_game_universe(concept):
@@ -154,30 +158,49 @@ def generate_characters(concept):
     return generate_content(prompt)
 
 def generate_image(prompt, negative_prompt=None):
-    """Génère une image avec l'API Hugging Face."""
+    """
+    Génère une image avec l'API Hugging Face.
+    
+    Args:
+        prompt (str): La description de l'image à générer
+        negative_prompt (str, optional): Ce qu'il faut éviter dans l'image
+        
+    Returns:
+        ContentFile: Le fichier image généré ou None en cas d'erreur
+    """
     try:
+        logger.info(f"Début de la génération d'image avec le prompt: {prompt}")
+        
+        # Vérification de la clé API
+        if not API_KEY:
+            logger.error("HUGGINGFACE_API_KEY n'est pas définie")
+            return None
+            
+        # Préparation du payload
         payload = {
             "inputs": prompt,
             "parameters": {
                 "num_inference_steps": 30,
-                "guidance_scale": 7.5
+                "guidance_scale": 7.5,
+                "negative_prompt": negative_prompt or "ugly, blurry, poor quality, distorted"
             }
         }
         
-        if negative_prompt:
-            payload["parameters"]["negative_prompt"] = negative_prompt
-            
+        logger.info("Envoi de la requête à l'API...")
         response = requests.post(
-            f"{API_URL}/{IMAGE_MODEL}",
+            IMAGE_API_URL,
             headers=HEADERS,
             json=payload
         )
         
+        # Vérification de la réponse
         if response.status_code == 200:
+            logger.info("Image générée avec succès")
             return ContentFile(response.content, name=f"{prompt[:20]}.png")
         else:
             logger.error(f"Erreur API: {response.status_code} - {response.text}")
             return None
+            
     except Exception as e:
         logger.error(f"Erreur lors de la génération d'image: {str(e)}")
         return None 
